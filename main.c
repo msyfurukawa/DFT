@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#include <string.h>
 #include "MT.h"
 #include "CmpNum.h"
 
@@ -12,11 +13,27 @@
 //execute DFT and FFT ITER times in one k
 #define ITER 30
 
+#define OUTPUT_LIM 20
+
 //discrete Fourier transform according to definition formula
 void DFT(complex *data, complex *X, int K);
 
 //fast Fourier transform
 void FFT(complex *data, complex *X, int k);
+
+//return order number(char array) of i
+void ord_num(int i, char *result){
+	sprintf(result, "%d", i);
+	if(i % 10 == 1){
+		strcat(result, "st");
+	}else if(i % 10 == 2){
+		strcat(result, "nd");
+	}else if(i % 10 == 3){
+		strcat(result, "rd");
+	}else{
+		strcat(result, "th");
+	}
+}
 
 //get micro second
 long get_usec(){
@@ -43,6 +60,9 @@ int main(){
 
 	int k = init_k, K, K_list[k_max-init_k+1], i, j, l;
 	long t1, t2, DFT_iter_t, FFT_iter_t, DFT_t[k_max-init_k+1], FFT_t[k_max-init_k+1];
+	char order[10];
+
+	printf("### Resluts of DFT & FFT ###\n");
 
 	for(i = 0; i <= k_max - init_k; i++){
 		K = (int)pow(2, k);
@@ -64,6 +84,25 @@ int main(){
 			FFT(a, X2, k);
 			t2 = get_usec();
 			FFT_iter_t += t2 - t1;
+
+			//output and compare the results of DFT & FFT
+			ord_num(j, order);
+			printf("k = %d (%s time)\nDFT\tFFT\n", k, order);
+			for(l = 0; l < K; l++){
+				if(l >= OUTPUT_LIM) break;
+				printf("[%d] ", l);
+				if(X1[l].Im < 0){
+					printf("%lf%lfi\t", X1[l].Re, X1[l].Im);
+				}else{
+					printf("%lf+%lfi\t", X1[l].Re, X1[l].Im);
+				}
+				if(X2[l].Im < 0){
+					printf("%lf%lfi\n", X2[l].Re, X2[l].Im);
+				}else{
+					printf("%lf+%lfi\n", X2[l].Re, X2[l].Im);
+				}
+			}
+			printf("\n");
 		}
 		K_list[i] = K;
 		DFT_t[i] = DFT_iter_t / ITER;
@@ -72,7 +111,8 @@ int main(){
 		k += 1;
 	}
 
-	//output result
+	//output calculation time
+	printf("### Calculation Time ###\n");
 	for(i = 0; i <= k_max - init_k; i++){
 		printf("K=%d\nDFT:%ld (micor sec)\nFFT:%ld (micro sec)\n\n", K_list[i], DFT_t[i], FFT_t[i]);
 	}
@@ -93,23 +133,6 @@ int main(){
 
 	fprintf(gp, "quit\n");
 	pclose(gp);
-
-	/*for(i = 0; i < K; i++){
-		printf("[%d] ", i);
-		if(X1[i].Im < 0){
-			printf("%lf%lfi\t", X1[i].Re, X1[i].Im);
-		}else{
-			printf("%lf+%lfi\t", X1[i].Re, X1[i].Im);
-		}
-		if(X2[i].Im < 0){
-			printf("%lf%lfi\n", X2[i].Re, X2[i].Im);
-		}else{
-			printf("%lf+%lfi\n", X2[i].Re, X2[i].Im);
-		}
-
-	}
-
-	printf("DFT: %ld(micro sec)\nFFT: %ld(micro sec)", DFT_t, FFT_t);*/
 
 	free(a);
 	free(X1);
